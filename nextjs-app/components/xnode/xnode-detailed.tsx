@@ -730,7 +730,7 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
                     <RowDiv>
                       <Status
                         type="warning"
-                        text="Pool not deployed. This account is not authorized to deploy pools. Contact Openmesh to request access."
+                        text="Pool not deployed. This account is not authorized to deploy pools. Contact Meta Pool to request access."
                       />
                     </RowDiv>
                   ) : connectedAccountBalance !== undefined &&
