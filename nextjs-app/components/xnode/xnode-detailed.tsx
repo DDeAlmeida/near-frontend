@@ -60,7 +60,7 @@ import {
   useUsageMemory,
 } from "@openmesh-network/xnode-manager-sdk-react";
 import { usePrepareXnode } from "@/hooks/useXnode";
-import { useAllowed } from "@/hooks/useAllowed";
+import { usePoolAllowed } from "@/hooks/useAllowed";
 import { SubdomainClaimer } from "./subdomain-claimer";
 import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
 import { actionCreators } from "@near-wallet-selector/core";
@@ -198,8 +198,8 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
   });
 
   const { accountId, loading, modal, selector } = useNear();
-  const allowed = useAllowed({ accountId });
   const fullPoolId = `${poolId}.${poolVersion}.near`;
+  const poolAllowed = usePoolAllowed({ fullPoolId });
   const { data: poolDeployed } = useQuery({
     queryKey: ["poolDeployed", near ?? "", fullPoolId],
     enabled: !!near && !fullPoolId.startsWith("."),
@@ -499,6 +499,44 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
     { name: string; description: string; execute: () => void } | undefined
   >(undefined);
 
+  if (poolAllowed !== true) {
+    return (
+      <SectionCard title="Configure Pool">
+        <RowDiv>
+          <Label htmlFor="poolId">Pool ID</Label>
+          <Input
+            id="poolId"
+            className="max-w-40"
+            value={poolId}
+            onChange={(e) => setPoolId(e.target.value.toLowerCase())}
+          />
+        </RowDiv>
+        <RowDiv>
+          <Label htmlFor="poolVersion">Pool Version</Label>
+          <Select value={poolVersion} onValueChange={(e) => setPoolVersion(e)}>
+            <SelectTrigger id="poolVersion" className="max-w-60">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pool">Upgradeable (.pool.near)</SelectItem>
+              <SelectItem value="poolv1">V1 (.poolv1.near)</SelectItem>
+            </SelectContent>
+          </Select>
+        </RowDiv>
+        <RowDiv>
+          <Status
+            type="warning"
+            text={
+              poolId && poolAllowed === undefined
+                ? "Checking access..."
+                : `${fullPoolId} is not authorized. Contact Meta Pool to request access.`
+            }
+          />
+        </RowDiv>
+      </SectionCard>
+    );
+  }
+
   return (
     <>
       <div className="flex flex-col gap-5">
@@ -665,7 +703,7 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
                         pinger,
                       }).finally(() => setBusy(false));
                     }}
-                    disabled={!poolId || busy || allowed !== true}
+                    disabled={!poolId || busy}
                   >
                     Deploy
                   </Button>
@@ -687,9 +725,7 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
                         pinger,
                       }).finally(() => setBusy(false));
                     }}
-                    disabled={
-                      !validatorLogs || !poolId || busy || allowed !== true
-                    }
+                    disabled={!validatorLogs || !poolId || busy}
                   >
                     Update
                   </Button>
@@ -726,14 +762,7 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
                 poolDeployed !== undefined &&
                 validatorPublicKey !== undefined &&
                 (!poolDeployed ? (
-                  allowed !== true ? (
-                    <RowDiv>
-                      <Status
-                        type="warning"
-                        text="Pool not deployed. This account is not authorized to deploy pools. Contact Meta Pool to request access."
-                      />
-                    </RowDiv>
-                  ) : connectedAccountBalance !== undefined &&
+                  connectedAccountBalance !== undefined &&
                   connectedAccountBalance <
                     requiredAccountBalance.poolCost +
                       requiredAccountBalance.gasFee ? (
@@ -748,9 +777,6 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
                       <Status type="warning" text="Pool not deployed." />
                       <Button
                         onClick={() => {
-                          if (allowed !== true) {
-                            return;
-                          }
                           setBusy(true);
                           selector
                             .wallet()

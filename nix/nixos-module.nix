@@ -31,12 +31,12 @@ in
         '';
       };
 
-      allowedAccounts = lib.mkOption {
+      allowedPools = lib.mkOption {
         type = lib.types.listOf lib.types.str;
         default = [ ];
-        example = [ "alice.near" ];
+        example = [ "chainflow.pool.near" "pandateam.poolv1.near" ];
         description = ''
-          NEAR accounts allowed to deploy and manage pools. Empty means nobody is allowed.
+          Full pool ids allowed to use the app. Empty means nothing is allowed.
         '';
       };
 
@@ -58,7 +58,7 @@ in
       environment = {
         HOSTNAME = cfg.hostname;
         PORT = toString cfg.port;
-        ALLOWED_NEAR_ACCOUNTS = lib.concatStringsSep "," cfg.allowedAccounts;
+        ALLOWED_POOLS = lib.concatStringsSep "," cfg.allowedPools;
       };
       serviceConfig = {
         ExecStart = "${lib.getExe near-frontend}";
