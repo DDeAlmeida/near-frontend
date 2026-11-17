@@ -60,6 +60,7 @@ import {
   useUsageMemory,
 } from "@openmesh-network/xnode-manager-sdk-react";
 import { usePrepareXnode } from "@/hooks/useXnode";
+import { useAllowed } from "@/hooks/useAllowed";
 import { SubdomainClaimer } from "./subdomain-claimer";
 import { Alert, AlertTitle, AlertDescription } from "../ui/alert";
 import { actionCreators } from "@near-wallet-selector/core";
@@ -197,6 +198,7 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
   });
 
   const { accountId, loading, modal, selector } = useNear();
+  const allowed = useAllowed({ accountId });
   const fullPoolId = `${poolId}.${poolVersion}.near`;
   const { data: poolDeployed } = useQuery({
     queryKey: ["poolDeployed", near ?? "", fullPoolId],
@@ -663,7 +665,7 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
                         pinger,
                       }).finally(() => setBusy(false));
                     }}
-                    disabled={!poolId || busy}
+                    disabled={!poolId || busy || allowed !== true}
                   >
                     Deploy
                   </Button>
@@ -685,7 +687,9 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
                         pinger,
                       }).finally(() => setBusy(false));
                     }}
-                    disabled={!validatorLogs || !poolId || busy}
+                    disabled={
+                      !validatorLogs || !poolId || busy || allowed !== true
+                    }
                   >
                     Update
                   </Button>
@@ -722,7 +726,14 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
                 poolDeployed !== undefined &&
                 validatorPublicKey !== undefined &&
                 (!poolDeployed ? (
-                  connectedAccountBalance !== undefined &&
+                  allowed !== true ? (
+                    <RowDiv>
+                      <Status
+                        type="warning"
+                        text="Pool not deployed. This account is not authorized to deploy pools. Contact Openmesh to request access."
+                      />
+                    </RowDiv>
+                  ) : connectedAccountBalance !== undefined &&
                   connectedAccountBalance <
                     requiredAccountBalance.poolCost +
                       requiredAccountBalance.gasFee ? (
@@ -737,6 +748,9 @@ export function XnodeDetailed({ domain }: { domain?: string }) {
                       <Status type="warning" text="Pool not deployed." />
                       <Button
                         onClick={() => {
+                          if (allowed !== true) {
+                            return;
+                          }
                           setBusy(true);
                           selector
                             .wallet()

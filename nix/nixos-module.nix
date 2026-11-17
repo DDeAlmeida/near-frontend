@@ -31,6 +31,15 @@ in
         '';
       };
 
+      allowedAccounts = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        example = [ "alice.near" ];
+        description = ''
+          NEAR accounts allowed to deploy and manage pools. Empty means nobody is allowed.
+        '';
+      };
+
       openFirewall = lib.mkOption {
         type = lib.types.bool;
         default = true;
@@ -49,6 +58,7 @@ in
       environment = {
         HOSTNAME = cfg.hostname;
         PORT = toString cfg.port;
+        ALLOWED_NEAR_ACCOUNTS = lib.concatStringsSep "," cfg.allowedAccounts;
       };
       serviceConfig = {
         ExecStart = "${lib.getExe near-frontend}";
