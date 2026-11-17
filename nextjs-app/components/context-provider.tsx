@@ -3,6 +3,7 @@ import Web3Provider from "./web3-provider";
 import { SettingsProvider } from "./context/settings";
 import { NearProvider } from "./near-provider";
 import { Toaster } from "./ui/sonner";
+import { AccessGate } from "./access-gate";
 
 export function ContextProvider({
   children,
@@ -15,7 +16,7 @@ export function ContextProvider({
     <SettingsProvider>
       <Web3Provider cookies={cookies}>
         <NearProvider>
-          {children}
+          <AccessGate>{children}</AccessGate>
           <Toaster />
         </NearProvider>
       </Web3Provider>
